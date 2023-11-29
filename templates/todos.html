@@ -1,0 +1,13 @@
+<div id="list">
+  <div>
+    {% let len = todos.len() %}
+
+    {% if len == 0 %}
+      <div>You have no todos!</div>
+    {% else %}
+      {% for todo in todos %}
+        {% include "todo.html" %}
+      {% endfor %}
+    {% endif %}
+  </div>
+</div>
