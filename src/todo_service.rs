@@ -3,7 +3,7 @@ use crate::templates::Todo;
 pub trait ITodoService {
     fn new() -> Self;
     fn get_todos(&self) -> Vec<Todo>;
-    fn create_todo(&self, todo: Todo) -> Todo;
+    fn add_todo(&mut self, todo: Todo) -> ();
 }
 
 #[derive(Clone)]
@@ -26,9 +26,10 @@ impl ITodoService for TodoService {
         Self { todos }
     }
     fn get_todos(&self) -> Vec<Todo> {
-        return self.todos.clone();
+        self.todos.clone()
     }
-    fn create_todo(&self, todo: Todo) -> Todo {
-        unimplemented!()
+    fn add_todo(&mut self, todo: Todo) -> () {
+        self.todos.push(todo.clone());
+        ()
     }
 }

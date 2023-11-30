@@ -11,9 +11,9 @@
     crossorigin="anonymous"> </script>
 </head>
 
-
 <body>
     <button hx-get="/todos" hx-swap="outerHTML" hx-target="body">Click Me!</button>
+    {% include "add_todo.html" %}
 </body>
 
 </html>

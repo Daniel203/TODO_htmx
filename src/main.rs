@@ -2,14 +2,14 @@ mod templates;
 mod todo_service;
 
 use askama::Template;
-use templates::{IndexTemplate, TodosTemplate};
+use templates::{IndexTemplate, Todo, TodosTemplate};
 
 use axum::{
     extract::State,
     http::StatusCode,
     response::{Html, IntoResponse},
     routing::{get, post},
-    Router,
+    Form, Router,
 };
 use todo_service::{ITodoService, TodoService};
 
@@ -26,8 +26,8 @@ async fn main() {
 
     let app = Router::new()
         .route("/", get(root))
-        .route("/todo", post(add_todo))
         .route("/todos", get(get_todos))
+        .route("/add_todo", post(add_todo))
         .with_state(state.clone());
 
     let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
@@ -52,6 +52,14 @@ async fn get_todos(State(AppState { todo_service }): State<AppState>) -> impl In
     (StatusCode::OK, Html(rendered).into_response())
 }
 
-async fn add_todo(State(AppState { todo_service }): State<AppState>) -> impl IntoResponse {
-    unimplemented!()
+async fn add_todo(
+    State(AppState { todo_service }): State<AppState>,
+    Form(todo): Form<Todo>,
+) -> impl IntoResponse {
+    if todo.title.is_empty() || todo.description.is_empty() {
+        return (StatusCode::BAD_REQUEST, "title or description is empty");
+    }
+
+    todo_service.add_todo(todo);
+    (StatusCode::OK, "todo added")
 }
