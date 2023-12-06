@@ -7,21 +7,21 @@ use templates::{IndexTemplate, Todo, TodosTemplate};
 use axum::{
     extract::State,
     http::StatusCode,
-    response::{Html, IntoResponse},
+    response::{ErrorResponse, Html, IntoResponse},
     routing::{get, post},
     Form, Router,
 };
-use todo_service::{ITodoService, TodoService};
+use todo_service::{TodoService, TodoServiceJSON};
 
 #[derive(Clone)]
 pub struct AppState {
-    todo_service: TodoService,
+    todo_service: TodoServiceJSON,
 }
 
 #[tokio::main]
 async fn main() {
     let state = AppState {
-        todo_service: TodoService::new(),
+        todo_service: TodoServiceJSON::new(),
     };
 
     let app = Router::new()
@@ -44,12 +44,20 @@ async fn root() -> impl IntoResponse {
 }
 
 async fn get_todos(State(AppState { todo_service }): State<AppState>) -> impl IntoResponse {
-    let template = TodosTemplate {
-        todos: todo_service.get_todos(),
-    };
-
-    let rendered = template.render().unwrap();
-    (StatusCode::OK, Html(rendered).into_response())
+    match todo_service.get_todos() {
+        Ok(todos) => {
+            let template = TodosTemplate { todos };
+            let rendered = template.render().unwrap();
+            (StatusCode::OK, Html(rendered).into_response())
+        }
+        Err(err) => {
+            println!("Error getting todos: {:?}", err);
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Html("Internal Server Error").into_response(),
+            )
+        }
+    }
 }
 
 async fn add_todo(
@@ -57,9 +65,20 @@ async fn add_todo(
     Form(todo): Form<Todo>,
 ) -> impl IntoResponse {
     if todo.title.is_empty() || todo.description.is_empty() {
-        return (StatusCode::BAD_REQUEST, "title or description is empty");
+        return (
+            StatusCode::BAD_REQUEST,
+            Html("Title or description is empty").into_response(),
+        );
     }
 
-    todo_service.add_todo(todo);
-    (StatusCode::OK, "todo added")
+    match todo_service.add_todo(todo) {
+        Ok(_) => (StatusCode::OK, Html("Todo added").into_response()),
+        Err(err) => {
+            println!("Error getting todos: {:?}", err);
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Html("Internal Server Error").into_response(),
+            )
+        }
+    }
 }
